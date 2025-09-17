@@ -33,3 +33,46 @@ export interface ApiResponse<T = any> {
 export interface FormErrors {
   [key: string]: string;
 }
+
+export interface User {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  role?: 'candidate' | 'admin' | 'recruiter';
+  avatar?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  token?: string; // To match your existing response structure
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: User | null;
+}
+
+// export interface LoginCredentials {
+//   email: string;
+//   password: string;
+// }
+
+// export interface RegisterData {
+//   name: string;
+//   email: string;
+//   password: string;
+//   confirmPassword: string;
+// }
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+  message?: string;
+}
+
+export interface AuthContextType extends AuthState {
+  login: (token: string, userData: User) => void;
+  logout: () => void;
+  checkAuthStatus: () => void;
+}

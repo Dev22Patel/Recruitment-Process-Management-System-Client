@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { RegisterRequest, FormErrors } from '../../Types/auth';
 import { Button } from '../ui/Button';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '../../utils/constants';
-import { useNavigate } from 'react-router-dom';
 
 const RegisterForm = () => {
   const navigate = useNavigate();
@@ -94,10 +94,7 @@ const RegisterForm = () => {
         console.log('Registration successful:', result);
 
         // Show success toast
-        toast({
-          title: "Registration Successful!",
-          description: "Your account has been created. Redirecting to login...",
-        });
+        toast.success('Registration Successful! Redirecting to login...');
 
         // Navigate to login page after a short delay
         setTimeout(() => {
@@ -107,22 +104,14 @@ const RegisterForm = () => {
         setErrors({ submit: result.message || 'Registration failed' });
 
         // Show error toast
-        toast({
-          variant: "destructive",
-          title: "Registration Failed",
-          description: result.message || 'Please check your information and try again.',
-        });
+        toast.error(result.message || 'Please check your information and try again.');
       }
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({ submit: 'Network error. Please try again.' });
 
       // Show network error toast
-      toast({
-        variant: "destructive",
-        title: "Network Error",
-        description: "Please check your connection and try again.",
-      });
+      toast.error('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -256,6 +245,12 @@ const RegisterForm = () => {
           <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
         )}
       </div>
+
+      {errors.submit && (
+        <div className="bg-red-50 border border-red-300 rounded-md p-3">
+          <p className="text-sm text-red-600">{errors.submit}</p>
+        </div>
+      )}
 
       <Button
         type="submit"

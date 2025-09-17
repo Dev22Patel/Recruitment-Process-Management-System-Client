@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../Context/AuthContext';
 import type { LoginRequest, FormErrors } from '../../Types/auth';
 import { Button } from '../ui/Button';
 import { toast } from 'sonner';
@@ -7,6 +8,8 @@ import { API_BASE_URL } from '../../utils/constants';
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Use AuthContext
+
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: ''
@@ -66,11 +69,10 @@ const LoginForm = () => {
       const result = await response.json();
 
       if (response.ok) {
-        // Store user data and token
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('user', JSON.stringify(result));
-
         console.log('Login successful:', result);
+
+        // Use AuthContext login method instead of localStorage directly
+        login(result.token, result);
 
         // Show success toast
         toast.success(`Welcome back, ${result.firstName}!`);
@@ -137,6 +139,12 @@ const LoginForm = () => {
           <p className="mt-1 text-sm text-red-600">{errors.password}</p>
         )}
       </div>
+
+      {errors.submit && (
+        <div className="bg-red-50 border border-red-300 rounded-md p-3">
+          <p className="text-sm text-red-600">{errors.submit}</p>
+        </div>
+      )}
 
       <Button
         type="submit"
