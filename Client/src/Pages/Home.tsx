@@ -1,11 +1,17 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import Navbar from '../Components/layout/Navbar';
 import { Button } from '../Components/ui/Button';
 import { APP_NAME } from '../utils/constants';
 
 const Home = () => {
+    const isAuthenticated = localStorage.getItem('token');
+    const navigate = useNavigate();
+
   useEffect(() => {
+    if(isAuthenticated) {
+      navigate('/dashboard');
+    }
     // Prevent scrolling on mount
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
