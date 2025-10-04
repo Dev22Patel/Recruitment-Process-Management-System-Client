@@ -24,7 +24,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="h-screen overflow-hidden bg-white">
+    <div className="h-screen overflow-hidden bg-amber-50/30">
       <Navbar />
       <div className="flex items-center justify-center h-[calc(100vh-64px)] px-4">
         <div className="max-w-md w-full text-center space-y-8">

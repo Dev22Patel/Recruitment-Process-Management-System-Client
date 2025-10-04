@@ -7,7 +7,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="min-h-screen bg-amber-50/40">
           <AppRoutes />
         </div>
       </Router>
