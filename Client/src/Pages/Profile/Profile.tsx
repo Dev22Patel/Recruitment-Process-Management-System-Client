@@ -1,12 +1,9 @@
-// src/Pages/Profile/Profile.tsx
 import { useState, useEffect } from 'react';
 import { Button } from '@/Components/ui/Button';
 import { User, Edit, MapPin, Building, Calendar, GraduationCap, DollarSign, Clock, Upload } from 'lucide-react';
 import { useAuth } from '../../Context/AuthContext';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '../../utils/constants';
-
-// Import components - remove SkillModal
 import {
   PersonalInfoSection,
   ProfessionalInfoSection,
@@ -15,12 +12,10 @@ import {
   SkillsSection,
   MissingFieldsAlert
 } from './ProfileFormSections';
-import type { ProfileProps,CandidateProfile,UpdateCandidate,Skill, CandidateSkillResponse, RequiredField } from './ProfileTypes';
+import type { ProfileProps, CandidateProfile, UpdateCandidate, Skill, CandidateSkillResponse, RequiredField } from './ProfileTypes';
 
 export const Profile = ({
   isProfileComplete,
-  setIsProfileComplete,
-  setActiveTab,
   checkProfileCompletion
 }: ProfileProps) => {
   const { user } = useAuth();
@@ -31,12 +26,9 @@ export const Profile = ({
   const [formData, setFormData] = useState<UpdateCandidate>({});
   const [skillCategories, setSkillCategories] = useState<string[]>([]);
 
-  // Remove modal-related state variables
-
   // Fetch candidate profile
   const fetchCandidateProfile = async () => {
     if (!user?.userId) return;
-
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/Candidate/${user.userId}`, {
@@ -45,12 +37,10 @@ export const Profile = ({
           'Content-Type': 'application/json',
         },
       });
-
       if (response.ok) {
         const data = await response.json();
         setCandidateData(data);
         console.log('Fetched candidate data:', data);
-
         setFormData({
           currentLocation: data.currentLocation || '',
           totalExperience: data.totalExperience || 0,
@@ -94,12 +84,10 @@ export const Profile = ({
           'Content-Type': 'application/json',
         },
       });
-
       if (response.ok) {
         const skills = await response.json();
         setAvailableSkills(skills);
         console.log('Fetched skills:', skills);
-
         const categories = [...new Set(skills.map((skill: Skill) => skill.category).filter(Boolean))];
         setSkillCategories(categories as string[]);
       }
@@ -118,7 +106,6 @@ export const Profile = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.userId) return;
-
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -130,7 +117,6 @@ export const Profile = ({
         },
         body: JSON.stringify(formData),
       });
-
       if (response.ok) {
         const updatedData = await response.json();
         setCandidateData(updatedData.data || updatedData);
@@ -149,7 +135,7 @@ export const Profile = ({
     }
   };
 
-  // Remove skill-related functions and update skills section calls
+  // Remove skill
   const handleRemoveSkill = (skillId: string) => {
     const updatedSkills = formData.skills?.filter(skill => skill.skillId !== skillId) || [];
     setFormData(prev => ({ ...prev, skills: updatedSkills }));
@@ -180,7 +166,6 @@ export const Profile = ({
       { key: 'graduationYear', label: 'Graduation Year' },
       { key: 'degree', label: 'Degree' }
     ];
-
     return requiredFields.filter(field => {
       const value = formData[field.key as keyof UpdateCandidate];
       return !value || (typeof value === 'string' && value.trim() === '') ||
@@ -191,7 +176,6 @@ export const Profile = ({
   // Group candidate skills by category
   const getSkillsByCategory = () => {
     const skillsByCategory: { [key: string]: CandidateSkillResponse[] } = {};
-
     candidateData?.skills?.forEach(skill => {
       const category = skill.category || 'Other';
       if (!skillsByCategory[category]) {
@@ -199,7 +183,6 @@ export const Profile = ({
       }
       skillsByCategory[category].push(skill);
     });
-
     return skillsByCategory;
   };
 
@@ -228,7 +211,6 @@ export const Profile = ({
   // Show profile completion form if profile is incomplete
   if (!isProfileComplete) {
     const missingFields = getMissingFields();
-
     return (
       <div>
         <h2 className="text-2xl font-bold mb-4">
@@ -236,7 +218,6 @@ export const Profile = ({
         </h2>
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <MissingFieldsAlert missingFields={missingFields} candidateData={candidateData} />
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <PersonalInfoSection formData={formData} setFormData={setFormData} isRequired />
             <ProfessionalInfoSection formData={formData} setFormData={setFormData} isRequired />
@@ -252,7 +233,6 @@ export const Profile = ({
               getSkillName={getSkillName}
               getSkillCategory={getSkillCategory}
             />
-
             <div className="flex space-x-4">
               <Button
                 type="submit"
@@ -299,7 +279,6 @@ export const Profile = ({
           </Button>
         </div>
       </div>
-
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         {isEditing ? (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -317,7 +296,6 @@ export const Profile = ({
               getSkillName={getSkillName}
               getSkillCategory={getSkillCategory}
             />
-
             <div className="flex space-x-4">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save Changes'}
@@ -389,7 +367,6 @@ export const Profile = ({
                 </div>
               </div>
             </div>
-
             {/* Professional Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Professional Information</h3>
@@ -403,18 +380,8 @@ export const Profile = ({
                     </div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Upload className="h-5 w-5 text-gray-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Resume</p>
-                      <p className="font-medium">{candidateData?.resumeFilePath || 'Not uploaded'}</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
-
             {/* Education Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Education Information</h3>
@@ -442,14 +409,12 @@ export const Profile = ({
                 </div>
               </div>
             </div>
-
             {/* Skills by Category */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Skills</h3>
               {(() => {
                 const skillsByCategory = getSkillsByCategory();
                 const hasSkills = Object.keys(skillsByCategory).length > 0;
-
                 if (!hasSkills) {
                   return (
                     <div className="text-center py-8 text-gray-500">
@@ -457,7 +422,6 @@ export const Profile = ({
                     </div>
                   );
                 }
-
                 return (
                   <div className="space-y-6">
                     {Object.entries(skillsByCategory).map(([category, skills]) => (
@@ -489,9 +453,30 @@ export const Profile = ({
                 );
               })()}
             </div>
+            {/* Resume Display */}
+            {candidateData?.resumeFilePath && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Resume</h3>
+                <div className="flex flex-col items-center space-y-4">
+                  <a
+                    href={candidateData.resumeFilePath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 underline text-sm"
+                  >
+                    Open Resume in New Tab
+                  </a>
+                  <iframe
+                    src={candidateData.resumeFilePath}
+                    className="w-full max-w-4xl h-[800px] border border-gray-300 rounded-lg shadow-md"
+                    title="Resume Preview"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
   );
-}
+};

@@ -1,7 +1,8 @@
 // src/Pages/Profile/ProfileFormSections.tsx
 import { Button } from '@/Components/ui/Button';
-import { Plus, X, MapPin, Clock, Building, DollarSign, Calendar, GraduationCap, Upload } from 'lucide-react';
-import type { UpdateCandidate, CandidateSkill, Skill, RequiredField } from './ProfileTypes';
+import { Plus, X, MapPin, Clock, Building, DollarSign, Calendar, GraduationCap } from 'lucide-react';
+import type { UpdateCandidate, Skill } from './ProfileTypes';
+import { ResumeUpload } from './ResumeUpload';
 import { useState, type JSXElementConstructor, type Key, type ReactElement, type ReactNode, type ReactPortal } from 'react';
 
 interface PersonalInfoSectionProps {
@@ -177,26 +178,23 @@ interface AdditionalInfoSectionProps {
   setFormData: React.Dispatch<React.SetStateAction<UpdateCandidate>>;
 }
 
-export const AdditionalInfoSection = ({ formData, setFormData }: AdditionalInfoSectionProps) => (
-  <div>
-    <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Additional Information</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Upload className="inline h-4 w-4 mr-1" />
-          Resume File Path
-        </label>
-        <input
-          type="text"
-          value={formData.resumeFilePath || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, resumeFilePath: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Path to your resume file"
+export const AdditionalInfoSection = ({ formData, setFormData }: AdditionalInfoSectionProps) => {
+  const handleResumeUploadSuccess = (url: string) => {
+    setFormData(prev => ({ ...prev, resumeFilePath: url }));
+  };
+
+  return (
+    <div>
+      <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Additional Information</h3>
+      <div className="grid grid-cols-1 gap-4">
+        <ResumeUpload
+          currentResumeUrl={formData.resumeFilePath}
+          onUploadSuccess={handleResumeUploadSuccess}
         />
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface SkillsSectionProps {
   formData: UpdateCandidate;
