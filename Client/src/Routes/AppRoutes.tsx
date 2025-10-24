@@ -5,6 +5,8 @@ import Register from '../Pages/Register';
 import ProtectedRoute from './ProtectedRoutes';
 import PublicRoute from './PublicRoutes';
 import CandidateDashboard from '@/Pages/CandidateDashborad';
+import AdminRoute from './AdminRoutes';
+import AdminDashboard from '@/Pages/Admin/AdminDashboard';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -32,6 +34,14 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <CandidateDashboard />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
         }
       />
       {/* Catch-all route for 404 */}
