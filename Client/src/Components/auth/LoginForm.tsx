@@ -67,6 +67,7 @@ const LoginForm = () => {
       });
 
       const result = await response.json();
+      console.log(result);
 
       if (response.ok) {
         console.log('Login successful:', result);
@@ -77,8 +78,11 @@ const LoginForm = () => {
         // Show success toast
         toast.success(`Welcome back, ${result.firstName}!`);
 
-        // Navigate to dashboard
-        navigate('/dashboard');
+        if(result.userType == 'Admin'){
+            navigate('/admin');
+        } else {
+            navigate('/dashboard');
+        }
       } else {
         setErrors({ submit: result.message || 'Login failed' });
 
