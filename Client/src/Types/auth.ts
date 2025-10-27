@@ -1,4 +1,4 @@
-// types/auth.ts
+// types/auth.ts (Updated version with role field)
 
 export interface LoginRequest {
   email: string;
@@ -11,7 +11,7 @@ export interface RegisterRequest {
   email: string;
   phoneNumber?: string;
   password: string;
-  confirmPassword?: string; // Frontend only field for validation
+  confirmPassword?: string;
 }
 
 export interface LoginResponse {
@@ -20,6 +20,7 @@ export interface LoginResponse {
   lastName: string;
   email: string;
   userType: string;
+  role?: 'candidate' | 'admin' | 'recruiter' | 'hr' | 'interviewer' | 'reviewer';
   token: string;
   expiresAt: string;
 }
@@ -40,11 +41,11 @@ export interface User {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  role?: 'candidate' | 'admin' | 'recruiter';
+  userType?: 'candidate' | 'Admin' | 'recruiter' | 'hr' | 'interviewer' | 'reviewer';
   avatar?: string;
   createdAt?: string;
   updatedAt?: string;
-  token?: string; // To match your existing response structure
+  token?: string;
 }
 
 export interface AuthState {
@@ -52,18 +53,6 @@ export interface AuthState {
   isLoading: boolean;
   user: User | null;
 }
-
-// export interface LoginCredentials {
-//   email: string;
-//   password: string;
-// }
-
-// export interface RegisterData {
-//   name: string;
-//   email: string;
-//   password: string;
-//   confirmPassword: string;
-// }
 
 export interface AuthResponse {
   token: string;

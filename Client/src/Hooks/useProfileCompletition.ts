@@ -52,7 +52,7 @@ export const useProfileCompletion = (): UseProfileCompletionReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.userId]);
 
   const refreshProfileStatus = useCallback(async () => {
     await checkProfileCompletion();
