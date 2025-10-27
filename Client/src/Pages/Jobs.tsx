@@ -1,3 +1,4 @@
+// src/Pages/Jobs.tsx
 import { useState, useEffect } from 'react';
 import { Briefcase, MapPin, DollarSign, Clock, Calendar, ChevronRight, Search, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -35,26 +36,33 @@ export const Jobs = ({ isProfileComplete }: JobsProps) => {
   const [eligibilityResults, setEligibilityResults] = useState<{[key: string]: any}>({});
 
   useEffect(() => {
-    if (isProfileComplete) fetchJobs();
+    if (isProfileComplete) {
+      fetchJobs();
+      fetchAppliedJobs();
+    }
   }, [isProfileComplete]);
 
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
+
       const response = await fetch('https://localhost:7057/api/JobPositions/active', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+
       if (!response.ok) {
         if (response.status === 401) throw new Error('Unauthorized access. Please log in again.');
-        if (response.status === 404) throw new Error('No active jobs found.');
-        throw new Error(`Failed to fetch jobs: ${response.statusText}`);
+        throw new Error('Failed to fetch jobs');
       }
+
       const data = await response.json();
-      const sortedJobs = data.sort((a: Job, b: Job) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+      const sortedJobs = data.sort((a: Job, b: Job) =>
+        new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+      );
       setJobs(sortedJobs);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load jobs. Please try again later.');
@@ -466,6 +474,46 @@ export const Jobs = ({ isProfileComplete }: JobsProps) => {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Application</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to apply for <strong>{jobToApply?.title}</strong>?
+              This action will submit your profile and resume to Roima's recruitment team.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={applyForJob}>
+              Yes, Apply Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Success Dialog */}
+      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <AlertDialogTitle>Application Submitted!</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription>
+              Your application has been successfully submitted to Roima. Our recruitment team will review your profile and get back to you soon.
+              You can track your application status in the "My Applications" section.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Got it</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
