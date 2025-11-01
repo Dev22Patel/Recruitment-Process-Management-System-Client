@@ -8,7 +8,7 @@ import { API_BASE_URL } from '../../utils/constants';
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Use AuthContext
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
@@ -24,7 +24,6 @@ const LoginForm = () => {
       [name]: value
     }));
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -68,28 +67,39 @@ const LoginForm = () => {
 
       const result = await response.json();
 
+
       if (response.ok) {
         console.log('Login successful:', result);
 
-        // Use AuthContext login method instead of localStorage directly
+        // Use AuthContext login method
         login(result.token, result);
 
         // Show success toast
         toast.success(`Welcome back, ${result.firstName}!`);
 
-        // Navigate to dashboard
-        navigate('/dashboard');
+        // Navigate based on user role
+        const userRole = result.userType?.toLowerCase();
+
+
+
+        if (userRole === 'candidate') {
+          navigate('/dashboard');
+        } else if (userRole === 'employee') {
+          setTimeout(() => {
+            navigate('/employee/dashboard');
+        }, 1);
+        } else {
+          // Fallback for unknown roles
+          navigate('/dashboard');
+        }
+
       } else {
         setErrors({ submit: result.message || 'Login failed' });
-
-        // Show error toast
         toast.error(result.message || 'Please check your credentials and try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
       setErrors({ submit: 'Network error. Please try again.' });
-
-      // Show network error toast
       toast.error('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);

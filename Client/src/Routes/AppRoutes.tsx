@@ -5,6 +5,7 @@ import Register from '../Pages/Register';
 import ProtectedRoute from './ProtectedRoutes';
 import PublicRoute from './PublicRoutes';
 import CandidateDashboard from '@/Pages/CandidateDashborad';
+import { EmployeeDashboard } from '@/Pages/Employee/EmployeeDashboard';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -31,6 +32,15 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <CandidateDashboard />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/employee/dashboard"
+        element={
+          <ProtectedRoute>
+            <EmployeeDashboard />
           </ProtectedRoute>
         }
       />
