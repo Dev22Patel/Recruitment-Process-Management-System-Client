@@ -5,8 +5,12 @@ import Register from '../Pages/Register';
 import ProtectedRoute from './ProtectedRoutes';
 import PublicRoute from './PublicRoutes';
 import CandidateDashboard from '@/Pages/CandidateDashborad';
+<<<<<<< HEAD
+import { EmployeeDashboard } from '@/Pages/Employee/EmployeeDashboard';
+=======
 import AdminRoute from './AdminRoutes';
 import AdminDashboard from '@/Pages/Admin/AdminDashboard';
+>>>>>>> 465e4830e9c94f4429a4875aa91932d9c7014465
 
 const AppRoutes: React.FC = () => {
   return (
@@ -36,12 +40,13 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
-        path="/admin"
+        path="/employee/dashboard"
         element={
-          <AdminRoute>
-            <AdminDashboard />
-          </AdminRoute>
+          <ProtectedRoute>
+            <EmployeeDashboard />
+          </ProtectedRoute>
         }
       />
       {/* Catch-all route for 404 */}

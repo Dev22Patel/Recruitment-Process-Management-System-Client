@@ -8,7 +8,7 @@ import { API_BASE_URL } from '../utils/constants';
 import { Sidebar } from '../Components/layout/Sidebar';
 import { Dashboard } from './Dashboard';
 import { Jobs } from './Jobs';
-import { Applications } from './Applications';
+import { Applications } from './Application/Applications';
 import { Interviews } from './Interviews';
 import { Profile } from './Profile/Profile';
 
