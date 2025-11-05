@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/Components/ui/Button';
-import { User, Edit, MapPin, Building, Calendar, GraduationCap, DollarSign, Clock, Upload } from 'lucide-react';
+import { User, Edit, MapPin, Building, Calendar, GraduationCap, DollarSign, Clock} from 'lucide-react';
 import { useAuth } from '../../Context/AuthContext';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '../../utils/constants';

@@ -1,6 +1,5 @@
 // Updated src/Pages/CandidateDashboard.tsx
 import { useState, useEffect } from 'react';
-import { CheckCircle } from 'lucide-react';
 import { useAuth } from '../Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
