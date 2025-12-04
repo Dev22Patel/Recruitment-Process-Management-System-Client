@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobPositionService } from '@/Services/JobPositionService';
-import type { CreateJobPositionDto } from '@/types/job.types';
+import type { CreateJobPositionDto } from '@/Types/job.types';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/input';
 import { Textarea } from '@/Components/ui/textarea';

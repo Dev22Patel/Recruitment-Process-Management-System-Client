@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobPositionService } from '@/Services/JobPositionService';
-import type { JobPosition } from '@/types/job.types';
+import type { JobPosition } from '@/Types/job.types';
 import JobPositionCard from '@/Components/Employee/JobPositionCard';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/input';

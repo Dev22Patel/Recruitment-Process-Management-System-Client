@@ -39,10 +39,10 @@ export const jobPositionService = {
     return response.data;
   },
 
-  updateJobPosition: async (id: string, data: UpdateJobPositionDto): Promise<JobPosition> => {
-    const response = await api.put(`/JobPositions/${id}`, data);
-    return response.data;
-  },
+ async updateJobPosition(id: string, dto: UpdateJobPositionDto): Promise<JobPosition> {
+  const response = await api.put(`/JobPositions/${id}`, dto);
+  return response.data;
+},
 
   deleteJobPosition: async (id: string): Promise<void> => {
     await api.delete(`/JobPositions/${id}`);

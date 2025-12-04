@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { applicationService } from '@/Services/ApplicationService';
-import type { Application } from '@/types/application.types';
+import type { Application } from '@/Types/application.types';
 import ApplicationCard from '@/Components/Employee/ApplicationCard';
 import { Input } from '@/Components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';

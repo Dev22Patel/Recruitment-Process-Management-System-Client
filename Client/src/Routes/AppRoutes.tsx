@@ -13,6 +13,7 @@ import JobPositionDetails from '@/Pages/Employee/JobPositions/JobPositionDetails
 import AllApplications from '@/Pages/Employee/Applications/AllApplications';
 import ApplicationDetails from '@/Pages/Employee/Applications/ApplicationDetails';
 import AnalyticsDashboard from '@/Pages/Employee/Statistics/AnalyticsDashboard';
+import EditJobPosition from '@/Pages/Employee/JobPositions/EditJobPosition';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -58,7 +59,7 @@ const AppRoutes: React.FC = () => {
         <Route path="jobs" element={<JobPositionsList />} />
         <Route path="jobs/create" element={<CreateJobPosition />} />
         <Route path="jobs/:id" element={<JobPositionDetails />} />
-        <Route path="jobs/edit/:id" element={<CreateJobPosition />} />
+        <Route path="jobs/edit/:id" element={<EditJobPosition />} />
 
         {/* Applications */}
         <Route path="applications" element={<AllApplications />} />

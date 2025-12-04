@@ -6,7 +6,7 @@ interface Application {
   id: string;
   jobTitle: string;
   applicationDate: string;
-  status: string;
+  status?: string; // Make it optional
   skillMatchPercentage: number;
   matchedRequiredSkills: number;
   totalRequiredSkills: number;
@@ -24,32 +24,50 @@ export const Applications = () => {
   }, []);
 
   const fetchApplications = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found');
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch('https://localhost:7057/api/Application/my-applications', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch applications');
+    const response = await fetch('https://localhost:7057/api/Application/my-applications', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
+    });
 
-      const data = await response.json();
-      setApplications(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load applications');
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch applications');
     }
-  };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
+    const rawData = await response.json();
+
+    // TRANSFORM API → Frontend model
+    const applications: Application[] = rawData.map((app: any) => ({
+      id: app.applicationId,
+      jobTitle: app.jobTitle,
+      applicationDate: app.applicationDate,
+      status: app.currentStatus || 'Pending', // ← Map currentStatus → status
+      skillMatchPercentage: app.skillMatchPercentage ?? 0,
+      matchedRequiredSkills: app.matchedRequiredSkills ?? 0,
+      totalRequiredSkills: app.totalRequiredSkills ?? 0,
+      matchedPreferredSkills: app.matchedPreferredSkills ?? 0,
+      totalPreferredSkills: app.totalPreferredSkills ?? 0,
+    }));
+
+    setApplications(applications);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to load applications');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // SAFE: Handle undefined/null status
+  const getStatusIcon = (status?: string) => {
+    const s = status?.toLowerCase().trim();
+
+    switch (s) {
       case 'selected':
         return <CheckCircle className="h-6 w-6 text-green-600" />;
       case 'rejected':
@@ -63,8 +81,10 @@ export const Applications = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusColor = (status?: string) => {
+    const s = status?.toLowerCase().trim();
+
+    switch (s) {
       case 'selected':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'rejected':
@@ -78,6 +98,10 @@ export const Applications = () => {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
+  };
+
+  const getStatusDisplay = (status?: string) => {
+    return status?.trim() || 'Pending';
   };
 
   if (loading) {
@@ -151,40 +175,12 @@ export const Applications = () => {
                         application.status
                       )}`}
                     >
-                      {application.status}
+                      {getStatusDisplay(application.status)}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="h-5 w-5 text-gray-700" />
-                      <span className="font-semibold text-gray-700">Skill Match</span>
-                    </div>
-                    <p className="text-3xl font-bold">{application.skillMatchPercentage}%</p>
-                  </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-5 w-5 text-gray-700" />
-                      <span className="font-semibold text-gray-700">Required Skills</span>
-                    </div>
-                    <p className="text-3xl font-bold">
-                      {application.matchedRequiredSkills}/{application.totalRequiredSkills}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-5 w-5 text-gray-700" />
-                      <span className="font-semibold text-gray-700">Preferred Skills</span>
-                    </div>
-                    <p className="text-3xl font-bold">
-                      {application.matchedPreferredSkills}/{application.totalPreferredSkills}
-                    </p>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

@@ -11,12 +11,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/Components/ui/Button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/Context/AuthContext';
 
 const EmployeeDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-
+  const { logout }=useAuth();
   const menuItems = [
     {
       title: 'Overview',
@@ -41,8 +42,8 @@ const EmployeeDashboard = () => {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
+    navigate('/');
   };
 
   return (
