@@ -14,6 +14,11 @@ import AllApplications from '@/Pages/Employee/Applications/AllApplications';
 import ApplicationDetails from '@/Pages/Employee/Applications/ApplicationDetails';
 import AnalyticsDashboard from '@/Pages/Employee/Statistics/AnalyticsDashboard';
 import EditJobPosition from '@/Pages/Employee/JobPositions/EditJobPosition';
+import InterviewList from '@/Pages/Employee/Interviews/InterviewList';
+import ScheduleInterview from '@/Pages/Employee/Interviews/ScheduleInterview';
+import InterviewDetails from '@/Pages/Employee/Interviews/InterviewDetails';
+import MyInterviews from '@/Pages/Employee/Interviews/MyInterviews';
+import SubmitFeedback from '@/Pages/Employee/Interviews/SubmitFeedback';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -67,6 +72,14 @@ const AppRoutes: React.FC = () => {
 
         {/* Analytics */}
         <Route path="analytics" element={<AnalyticsDashboard />} />
+
+
+        {/* Interviews */}
+        <Route path="interviews" element={<InterviewList />} />
+        <Route path="interviews/schedule/:applicationId" element={<ScheduleInterview />} />
+        <Route path="interviews/:id" element={<InterviewDetails />} />
+        <Route path="my-interviews" element={<MyInterviews />} />
+        <Route path="interviews/:id/feedback" element={<SubmitFeedback />} />
       </Route>
 
       {/* Catch-all route for 404 */}

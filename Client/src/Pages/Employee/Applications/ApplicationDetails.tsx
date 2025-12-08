@@ -302,6 +302,10 @@ const ApplicationDetails = () => {
               <p className="text-sm text-gray-600">{application.statusReason}</p>
             </div>
           )}
+
+            <Button onClick={() => navigate(`/employee/interviews/schedule/${application.id}`)}>
+            Schedule Interview
+            </Button>
         </CardContent>
       </Card>
 

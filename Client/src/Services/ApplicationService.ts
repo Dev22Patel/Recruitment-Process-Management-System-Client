@@ -30,6 +30,12 @@ export const applicationService = {
     return response.data;
   },
 
+  getMyApplications: async (): Promise<Application[]> => {
+  const response = await api.get('/Application/my-applications');
+  return response.data;
+},
+
+
   getApplicationsByJob: async (jobPositionId: string): Promise<Application[]> => {
     const response = await api.get(`/Application/job/${jobPositionId}`);
     return response.data;

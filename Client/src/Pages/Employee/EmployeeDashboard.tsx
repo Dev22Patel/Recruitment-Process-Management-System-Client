@@ -5,9 +5,12 @@ import {
   Briefcase,
   FileText,
   BarChart3,
+  Calendar,
   Menu,
   LogOut,
-  X
+  X,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/Components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -15,9 +18,11 @@ import { useAuth } from '@/Context/AuthContext';
 
 const EmployeeDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [interviewsExpanded, setInterviewsExpanded] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout }=useAuth();
+  const { logout } = useAuth();
+
   const menuItems = [
     {
       title: 'Overview',
@@ -41,10 +46,24 @@ const EmployeeDashboard = () => {
     },
   ];
 
+  const interviewItems = [
+    {
+      title: 'All Interviews',
+      path: '/employee/interviews',
+    },
+    {
+      title: 'My Interviews',
+      path: '/employee/my-interviews',
+    },
+  ];
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  const isInterviewsActive = location.pathname.startsWith('/employee/interviews') ||
+                             location.pathname.startsWith('/employee/my-interviews');
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -70,7 +89,7 @@ const EmployeeDashboard = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path ||
@@ -92,6 +111,61 @@ const EmployeeDashboard = () => {
               </button>
             );
           })}
+
+          {/* Interviews Section */}
+          <div className="space-y-1">
+            <button
+              onClick={() => {
+                if (!sidebarOpen) {
+                  setSidebarOpen(true);
+                }
+                setInterviewsExpanded(!interviewsExpanded);
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                isInterviewsActive
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-700 hover:bg-gray-100'
+              )}
+            >
+              <Calendar className="h-5 w-5 flex-shrink-0" />
+              {sidebarOpen && (
+                <>
+                  <span className="font-medium flex-1 text-left">Interviews</span>
+                  {interviewsExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </>
+              )}
+            </button>
+
+            {/* Sub-menu */}
+            {sidebarOpen && interviewsExpanded && (
+              <div className="ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                {interviewItems.map((item) => {
+                  const isActive = location.pathname === item.path ||
+                                 location.pathname.startsWith(item.path + '/');
+
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
+                        isActive
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      )}
+                    >
+                      {item.title}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Logout */}
