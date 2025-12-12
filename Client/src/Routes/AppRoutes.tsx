@@ -19,6 +19,7 @@ import ScheduleInterview from '@/Pages/Employee/Interviews/ScheduleInterview';
 import InterviewDetails from '@/Pages/Employee/Interviews/InterviewDetails';
 import MyInterviews from '@/Pages/Employee/Interviews/MyInterviews';
 import SubmitFeedback from '@/Pages/Employee/Interviews/SubmitFeedback';
+import AdminDashboard from '@/Pages/Admin/AdminDashboard';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -81,6 +82,9 @@ const AppRoutes: React.FC = () => {
         <Route path="my-interviews" element={<MyInterviews />} />
         <Route path="interviews/:id/feedback" element={<SubmitFeedback />} />
       </Route>
+
+
+      <Route path="/admin" element={<AdminDashboard />} />
 
       {/* Catch-all route for 404 */}
       <Route path="*" element={<div className="text-center pt-20">Page Not Found</div>} />
