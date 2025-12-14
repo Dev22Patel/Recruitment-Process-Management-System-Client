@@ -83,15 +83,19 @@ const LoginForm = () => {
 
 
 
-        if (userRole === 'candidate') {
+        if (userRole == 'candidate') {
           navigate('/dashboard');
-        } else if (userRole === 'employee') {
-          setTimeout(() => {
-            navigate('/employee/dashboard');
-        }, 1);
-        } else {
-          // Fallback for unknown roles
-          navigate('/dashboard');
+        } else if (userRole == 'employee') {
+            setTimeout(() => {
+                navigate('/employee/dashboard');
+            }, 1);
+        } else if(userRole == 'admin'){
+            setTimeout(() => {
+                navigate('/admin');
+            }, 2);
+        }
+        else{
+            navigate('/');
         }
 
       } else {

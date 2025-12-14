@@ -16,6 +16,7 @@ const InterviewList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [timeFilter, setTimeFilter] = useState<string>('all'); // New filter
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -26,6 +27,7 @@ const InterviewList = () => {
   useEffect(() => {
     let filtered = interviews;
 
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(interview =>
         interview.candidateName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,16 +35,49 @@ const InterviewList = () => {
       );
     }
 
+    // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(interview => interview.statusId === parseInt(statusFilter));
     }
 
+    // Type filter
     if (typeFilter !== 'all') {
       filtered = filtered.filter(interview => interview.roundType === typeFilter);
     }
 
+    // Time filter (upcoming vs past)
+    if (timeFilter !== 'all') {
+      const now = new Date();
+      if (timeFilter === 'upcoming') {
+        filtered = filtered.filter(interview =>
+          interview.scheduledDate && new Date(interview.scheduledDate) > now
+        );
+      } else if (timeFilter === 'past') {
+        filtered = filtered.filter(interview =>
+          interview.scheduledDate && new Date(interview.scheduledDate) <= now
+        );
+      }
+    }
+
+    // Sort by scheduled date (upcoming first, then past)
+    filtered.sort((a, b) => {
+      if (!a.scheduledDate || !b.scheduledDate) return 0;
+      const dateA = new Date(a.scheduledDate);
+      const dateB = new Date(b.scheduledDate);
+      const now = new Date();
+
+      const aIsUpcoming = dateA > now;
+      const bIsUpcoming = dateB > now;
+
+      if (aIsUpcoming && !bIsUpcoming) return -1;
+      if (!aIsUpcoming && bIsUpcoming) return 1;
+
+      // Both upcoming or both past - sort by date
+      return aIsUpcoming ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+    });
+
     setFilteredInterviews(filtered);
-  }, [searchTerm, statusFilter, typeFilter, interviews]);
+  }, [searchTerm, statusFilter, typeFilter, timeFilter, interviews]);
 
   const fetchInterviews = async () => {
     try {
@@ -74,6 +109,11 @@ const InterviewList = () => {
     }
   };
 
+  const isUpcoming = (scheduledDate: string | undefined) => {
+    if (!scheduledDate) return false;
+    return new Date(scheduledDate) > new Date();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -82,6 +122,9 @@ const InterviewList = () => {
     );
   }
 
+  const upcomingCount = interviews.filter(i => isUpcoming(i.scheduledDate)).length;
+  const pastCount = interviews.length - upcomingCount;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -89,6 +132,28 @@ const InterviewList = () => {
           <h1 className="text-3xl font-bold text-gray-900">Interview Management</h1>
           <p className="text-gray-600 mt-1">Schedule and manage candidate interviews</p>
         </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-600">Total Interviews</div>
+            <div className="text-2xl font-bold">{interviews.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-600">Upcoming</div>
+            <div className="text-2xl font-bold text-blue-600">{upcomingCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-600">Completed</div>
+            <div className="text-2xl font-bold text-green-600">{pastCount}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -103,6 +168,16 @@ const InterviewList = () => {
             className="pl-10"
           />
         </div>
+        <Select value={timeFilter} onValueChange={setTimeFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by time" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Interviews</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
+            <SelectItem value="past">Completed</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
@@ -134,7 +209,7 @@ const InterviewList = () => {
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">No interviews found</h3>
           <p className="text-gray-600 mt-1">
-            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || timeFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'Schedule interviews from application details'}
           </p>
@@ -145,110 +220,121 @@ const InterviewList = () => {
             Showing {filteredInterviews.length} of {interviews.length} interviews
           </div>
           <div className="grid grid-cols-1 gap-4">
-            {filteredInterviews.map((interview) => (
-              <Card
-                key={interview.id}
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/employee/interviews/${interview.id}`)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">{interview.candidateName}</h3>
-                        <Badge className={getRoundTypeColor(interview.roundType)}>
-                          Round {interview.roundNumber} - {interview.roundType}
-                        </Badge>
-                        <Badge className={getStatusColor(interview.statusId)}>
-                          {interview.statusName}
-                        </Badge>
-                      </div>
-                      <p className="text-gray-600">{interview.jobTitle}</p>
-                      {interview.roundName && (
-                        <p className="text-sm text-gray-500 mt-1">{interview.roundName}</p>
-                      )}
-                    </div>
-                  </div>
+            {filteredInterviews.map((interview) => {
+              const upcoming = isUpcoming(interview.scheduledDate);
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {interview.scheduledDate && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-gray-500">Date & Time</p>
-                          <p className="font-medium">
-                            {new Date(interview.scheduledDate).toLocaleDateString()}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(interview.scheduledDate).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {interview.duration && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-gray-500">Duration</p>
-                          <p className="font-medium">{interview.duration} min</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-4 w-4 text-gray-400" />
+              return (
+                <Card
+                  key={interview.id}
+                  className={`hover:shadow-md transition-shadow cursor-pointer ${
+                    upcoming ? 'border-l-4 border-l-blue-500' : ''
+                  }`}
+                  onClick={() => navigate(`/employee/interviews/${interview.id}`)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
-                        <p className="text-gray-500">Participants</p>
-                        <p className="font-medium">{interview.totalParticipants}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <div>
-                        <p className="text-gray-500">Feedback</p>
-                        <p className="font-medium">
-                          {interview.totalFeedbacksReceived}/{interview.totalParticipants}
-                        </p>
-                        {interview.averageRating && (
-                          <p className="text-xs text-yellow-600">
-                            ⭐ {interview.averageRating.toFixed(1)}/5
-                          </p>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold">{interview.candidateName}</h3>
+                          <Badge className={getRoundTypeColor(interview.roundType)}>
+                            Round {interview.roundNumber} - {interview.roundType}
+                          </Badge>
+                          <Badge className={getStatusColor(interview.statusId)}>
+                            {interview.statusName}
+                          </Badge>
+                          {upcoming && (
+                            <Badge className="bg-blue-100 text-blue-800">
+                              Upcoming
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-600">{interview.jobTitle}</p>
+                        {interview.roundName && (
+                          <p className="text-sm text-gray-500 mt-1">{interview.roundName}</p>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  {(interview.meetingLink || interview.location) && (
-                    <div className="mt-4 pt-4 border-t flex gap-4">
-                      {interview.meetingLink && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {interview.scheduledDate && (
                         <div className="flex items-center gap-2 text-sm">
-                          <Video className="h-4 w-4 text-blue-600" />
-                            <a
-                            href={interview.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Join Meeting
-                          </a>
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-gray-500">Date & Time</p>
+                            <p className="font-medium">
+                              {new Date(interview.scheduledDate).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(interview.scheduledDate).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
                         </div>
                       )}
-                      {interview.location && (
+
+                      {interview.duration && (
                         <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span>{interview.location}</span>
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-gray-500">Duration</p>
+                            <p className="font-medium">{interview.duration} min</p>
+                          </div>
                         </div>
                       )}
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-gray-500">Participants</p>
+                          <p className="font-medium">{interview.totalParticipants}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <div>
+                          <p className="text-gray-500">Feedback</p>
+                          <p className="font-medium">
+                            {interview.totalFeedbacksReceived}/{interview.totalParticipants}
+                          </p>
+                          {interview.averageRating && (
+                            <p className="text-xs text-yellow-600">
+                              ⭐ {interview.averageRating.toFixed(1)}/5
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+
+                    {(interview.meetingLink || interview.location) && (
+                      <div className="mt-4 pt-4 border-t flex gap-4">
+                        {interview.meetingLink && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Video className="h-4 w-4 text-blue-600" />
+                            <a
+                              href={interview.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Join Meeting
+                            </a>
+                          </div>
+                        )}
+                        {interview.location && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                            <span>{interview.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </>
       )}

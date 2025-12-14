@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect} from 'react';
 import type { ReactNode } from 'react';
 import type { User, AuthContextType } from '../Types/auth';
+import { useNavigate } from 'react-router-dom';
 
 // Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,6 +16,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkAuthStatus();
@@ -67,8 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
-    // Optional: Call logout API
-    // logoutAPI();
+    navigate("/login");
   };
 
   const value: AuthContextType = {

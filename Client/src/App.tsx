@@ -5,15 +5,14 @@ import { Toaster } from 'sonner';
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="min-h-screen bg-amber-50/40">
           <AppRoutes />
         </div>
-      </Router>
-
-      <Toaster />
-    </AuthProvider>
+        <Toaster />
+      </AuthProvider>
+    </Router>
   );
 };
 

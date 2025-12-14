@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { applicationService } from '@/Services/ApplicationService';
 import { interviewService } from '@/Services/InterviewService';
 import type { Application } from '@/Types/application.types';
-import type { InterviewRound, InterviewFeedback } from '@/Types/interview.types';
+import type { InterviewRound } from '@/Types/interview.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
-import { Button } from '@/Components/ui/Button';
-import { Calendar, Clock, Video, MapPin, Star, MessageSquare, User } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InterviewsProps {
@@ -16,8 +15,6 @@ interface InterviewsProps {
 export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [interviewsByApp, setInterviewsByApp] = useState<Record<string, InterviewRound[]>>({});
-  const [feedbackByInterview, setFeedbackByInterview] = useState<Record<string, InterviewFeedback[]>>({});
-  const [expandedFeedback, setExpandedFeedback] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +31,6 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
       setApplications(apps);
 
       const interviewsMap: Record<string, InterviewRound[]> = {};
-      const feedbackMap: Record<string, InterviewFeedback[]> = {};
 
       await Promise.all(
         apps.map(async (app) => {
@@ -42,22 +38,6 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
             const interviews = await interviewService.getInterviewsByApplication(app.applicationId);
             if (interviews.length > 0) {
               interviewsMap[app.applicationId] = interviews;
-
-              // Fetch feedback for completed interviews
-              await Promise.all(
-                interviews.map(async (interview) => {
-                  if (interview.scheduledDate && new Date(interview.scheduledDate) <= new Date()) {
-                    try {
-                      const feedback = await interviewService.getFeedbacksByInterview(interview.id);
-                      if (feedback.length > 0) {
-                        feedbackMap[interview.id] = feedback;
-                      }
-                    } catch (error) {
-                      console.error(`Failed to fetch feedback for interview ${interview.id}`);
-                    }
-                  }
-                })
-              );
             }
           } catch (error) {
             console.error(`Failed to fetch interviews for application ${app.applicationId}`, error);
@@ -66,7 +46,6 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
       );
 
       setInterviewsByApp(interviewsMap);
-      setFeedbackByInterview(feedbackMap);
     } catch (error) {
       console.error('Error fetching interviews:', error);
       toast.error('Failed to fetch interviews');
@@ -84,11 +63,13 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
     }
   };
 
-  const toggleFeedback = (interviewId: string) => {
-    setExpandedFeedback(prev => ({
-      ...prev,
-      [interviewId]: !prev[interviewId]
-    }));
+  const isUpcoming = (scheduledDate: string | undefined) => {
+    if (!scheduledDate) return false;
+    return new Date(scheduledDate) > new Date();
+  };
+
+  const hasFeedback = (interview: InterviewRound) => {
+    return interview.totalFeedbacksReceived > 0;
   };
 
   if (!isProfileComplete) {
@@ -138,18 +119,25 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-1">My Interviews</h2>
-        <p className="text-gray-600">View your scheduled interviews and feedback</p>
+        <p className="text-gray-600">View your scheduled interviews</p>
       </div>
 
       <div className="space-y-6">
         {applicationsWithInterviews.map((application) => {
           const interviews = interviewsByApp[application.applicationId] || [];
-          const upcomingInterviews = interviews.filter(
-            i => i.scheduledDate && new Date(i.scheduledDate) > new Date()
-          );
-          const pastInterviews = interviews.filter(
-            i => i.scheduledDate && new Date(i.scheduledDate) <= new Date()
-          );
+          const upcomingInterviews = interviews
+            .filter(i => isUpcoming(i.scheduledDate))
+            .sort((a, b) => {
+              if (!a.scheduledDate || !b.scheduledDate) return 0;
+              return new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime();
+            });
+
+          const pastInterviews = interviews
+            .filter(i => !isUpcoming(i.scheduledDate))
+            .sort((a, b) => {
+              if (!a.scheduledDate || !b.scheduledDate) return 0;
+              return new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime();
+            });
 
           return (
             <Card key={application.applicationId}>
@@ -170,17 +158,20 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
                 {/* Upcoming Interviews */}
                 {upcomingInterviews.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-3">Upcoming</h4>
+                    <h4 className="font-medium text-sm text-gray-700 mb-3 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-blue-600" />
+                      Upcoming Interviews
+                    </h4>
                     <div className="space-y-3">
                       {upcomingInterviews.map((interview) => (
                         <div
                           key={interview.id}
-                          className="p-4 border rounded-lg bg-blue-50 border-blue-200"
+                          className="p-4 border-2 rounded-lg bg-blue-50 border-blue-200"
                         >
                           <div className="flex justify-between items-start mb-3">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">
+                                <span className="font-semibold text-blue-900">
                                   Round {interview.roundNumber} - {interview.roundType}
                                 </span>
                                 <Badge className={getStatusColor(interview.statusId)}>
@@ -188,7 +179,7 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
                                 </Badge>
                               </div>
                               {interview.roundName && (
-                                <p className="text-sm text-gray-600">{interview.roundName}</p>
+                                <p className="text-sm text-gray-700 font-medium">{interview.roundName}</p>
                               )}
                             </div>
                           </div>
@@ -197,48 +188,65 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
                             {interview.scheduledDate && (
                               <>
                                 <div className="flex items-center gap-2 text-sm">
-                                  <Calendar className="h-4 w-4 text-gray-500" />
-                                  <span>
-                                    {new Date(interview.scheduledDate).toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric'
-                                    })}
-                                  </span>
+                                  <Calendar className="h-4 w-4 text-blue-600" />
+                                  <div>
+                                    <p className="text-xs text-gray-600">Date</p>
+                                    <span className="font-medium text-gray-900">
+                                      {new Date(interview.scheduledDate).toLocaleDateString('en-US', {
+                                        weekday: 'short',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
-                                  <Clock className="h-4 w-4 text-gray-500" />
-                                  <span>
-                                    {new Date(interview.scheduledDate).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                    {interview.duration && ` (${interview.duration} min)`}
-                                  </span>
+                                  <Clock className="h-4 w-4 text-blue-600" />
+                                  <div>
+                                    <p className="text-xs text-gray-600">Time</p>
+                                    <span className="font-medium text-gray-900">
+                                      {new Date(interview.scheduledDate).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                      {interview.duration && (
+                                        <span className="text-gray-600"> ({interview.duration} min)</span>
+                                      )}
+                                    </span>
+                                  </div>
                                 </div>
                               </>
                             )}
                           </div>
 
                           {(interview.meetingLink || interview.location) && (
-                            <div className="flex gap-4 pt-3 border-t">
+                            <div className="flex flex-col gap-2 pt-3 border-t border-blue-300">
                               {interview.meetingLink && (
                                 <a
                                   href={interview.meetingLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
+                                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium"
                                 >
                                   <Video className="h-4 w-4" />
-                                  Join Meeting
+                                  Join Meeting Link
                                 </a>
                               )}
                               {interview.location && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <MapPin className="h-4 w-4" />
-                                  {interview.location}
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <MapPin className="h-4 w-4 text-gray-600" />
+                                  <span className="font-medium">{interview.location}</span>
                                 </div>
                               )}
+                            </div>
+                          )}
+
+                          {interview.totalParticipants > 0 && (
+                            <div className="mt-3 pt-3 border-t border-blue-300">
+                              <p className="text-xs text-gray-600">
+                                {interview.totalParticipants} {interview.totalParticipants === 1 ? 'interviewer' : 'interviewers'} assigned
+                              </p>
                             </div>
                           )}
                         </div>
@@ -250,138 +258,73 @@ export const Interviews = ({ isProfileComplete }: InterviewsProps) => {
                 {/* Past Interviews */}
                 {pastInterviews.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-3">Completed</h4>
+                    <h4 className="font-medium text-sm text-gray-700 mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      Completed Interviews
+                    </h4>
                     <div className="space-y-3">
-                      {pastInterviews.map((interview) => {
-                        const feedbacks = feedbackByInterview[interview.id] || [];
-                        const hasFeedback = feedbacks.length > 0;
-
-                        return (
-                          <div
-                            key={interview.id}
-                            className="p-4 border rounded-lg"
-                          >
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium">
-                                    Round {interview.roundNumber} - {interview.roundType}
-                                  </span>
-                                  <Badge className={getStatusColor(interview.statusId)}>
-                                    {interview.statusName}
+                      {pastInterviews.map((interview) => (
+                        <div
+                          key={interview.id}
+                          className="p-4 border rounded-lg bg-gray-50"
+                        >
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium">
+                                  Round {interview.roundNumber} - {interview.roundType}
+                                </span>
+                                <Badge className={getStatusColor(interview.statusId)}>
+                                  {interview.statusName}
+                                </Badge>
+                                {hasFeedback(interview) && (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Feedback Received
                                   </Badge>
-                                </div>
-                                {interview.scheduledDate && (
-                                  <p className="text-sm text-gray-600">
-                                    {new Date(interview.scheduledDate).toLocaleDateString()}
-                                  </p>
                                 )}
                               </div>
-                              {interview.averageRating && (
-                                <div className="text-right">
-                                  <div className="text-sm text-gray-500">Average Rating</div>
-                                  <div className="font-medium text-yellow-600 flex items-center gap-1">
-                                    <Star className="h-4 w-4 fill-yellow-400" />
-                                    {interview.averageRating.toFixed(1)}/5
-                                  </div>
+                              {interview.roundName && (
+                                <p className="text-sm text-gray-600">{interview.roundName}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {interview.scheduledDate && (
+                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                  {new Date(interview.scheduledDate).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              {interview.duration && (
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{interview.duration} minutes</span>
                                 </div>
                               )}
                             </div>
+                          )}
 
-                            {/* Feedback Section */}
-                            {hasFeedback && (
-                              <div className="mt-3 pt-3 border-t">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleFeedback(interview.id)}
-                                  className="w-full justify-between"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <MessageSquare className="h-4 w-4" />
-                                    View Feedback ({feedbacks.length} {feedbacks.length === 1 ? 'review' : 'reviews'})
-                                  </span>
-                                  <span>{expandedFeedback[interview.id] ? '▲' : '▼'}</span>
-                                </Button>
-
-                                {expandedFeedback[interview.id] && (
-                                  <div className="mt-3 space-y-3">
-                                    {feedbacks.map((feedback) => (
-                                      <div
-                                        key={feedback.id}
-                                        className="p-3 bg-gray-50 rounded-lg space-y-2"
-                                      >
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4 text-gray-500" />
-                                            <span className="text-sm font-medium">
-                                              {feedback.interviewerName || 'Interviewer'}
-                                            </span>
-                                          </div>
-                                          <div className="text-xs text-gray-500">
-                                            {new Date(feedback.submittedAt).toLocaleDateString()}
-                                          </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-3 text-xs">
-                                          {feedback.overallRating && (
-                                            <div>
-                                              <span className="text-gray-500">Overall:</span>
-                                              <div className="flex items-center gap-1 mt-1">
-                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                                <span className="font-medium">{feedback.overallRating}/5</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {feedback.technicalRating && (
-                                            <div>
-                                              <span className="text-gray-500">Technical:</span>
-                                              <div className="flex items-center gap-1 mt-1">
-                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                                <span className="font-medium">{feedback.technicalRating}/5</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {feedback.communicationRating && (
-                                            <div>
-                                              <span className="text-gray-500">Communication:</span>
-                                              <div className="flex items-center gap-1 mt-1">
-                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                                <span className="font-medium">{feedback.communicationRating}/5</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {feedback.recommendation && (
-                                          <div>
-                                            <span className="text-xs text-gray-500">Recommendation:</span>
-                                            <Badge
-                                              variant="outline"
-                                              className="ml-2 text-xs"
-                                            >
-                                              {feedback.recommendation.replace(/_/g, ' ')}
-                                            </Badge>
-                                          </div>
-                                        )}
-
-                                        {feedback.comments && (
-                                          <div>
-                                            <span className="text-xs text-gray-500">Comments:</span>
-                                            <p className="text-sm text-gray-700 mt-1">
-                                              {feedback.comments}
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
+                          {hasFeedback(interview) && (
+                            <div className="mt-3 pt-3 border-t">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm text-gray-600">
+                                  Feedback has been submitted by the interview panel
+                                </p>
+                                <Badge variant="outline" className="bg-green-50">
+                                  {interview.totalFeedbacksReceived}/{interview.totalParticipants} Reviews
+                                </Badge>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
