@@ -1,20 +1,19 @@
-import React, { createContext, useContext, useState, useEffect} from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, AuthContextType } from '../Types/auth';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
-// Create the context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Provider Props
-interface AuthProviderProps {
-  children: ReactNode;
+interface JwtPayload {
+  role?: string[] | string;
+  exp: number;
 }
 
-// Auth Provider Component
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
@@ -22,76 +21,72 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = async (): Promise<void> => {
+  const checkAuthStatus = (): void => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token'); // Using 'token' to match your existing code
-      const userData = localStorage.getItem('user'); // Using 'user' to match your existing code
 
-      if (token && userData) {
-        // Optional: Validate token with your API
-        // const isValidToken = await validateToken(token);
-        // if (!isValidToken) throw new Error('Invalid token');
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
 
-        const parsedUserData: User = JSON.parse(userData);
-        setUser(parsedUserData);
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-        setUser(null);
+      if (!token || !userData) {
+        logout();
+        return;
       }
+
+      const decoded = jwtDecode<JwtPayload>(token);
+
+      const roles =
+        typeof decoded.role === 'string'
+          ? [decoded.role]
+          : decoded.role ?? [];
+
+      const parsedUser: User = {
+        ...JSON.parse(userData),
+        roles, // 🔥 ADD ROLES HERE
+      };
+
+      setUser(parsedUser);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Clear invalid data
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setIsAuthenticated(false);
-      setUser(null);
+      logout();
     } finally {
       setIsLoading(false);
     }
   };
 
   const login = (token: string, userData: User): void => {
-    try {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    checkAuthStatus();
   };
 
   const logout = (): void => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.clear();
     setUser(null);
     setIsAuthenticated(false);
-    navigate("/login");
-  };
-
-  const value: AuthContextType = {
-    isAuthenticated,
-    isLoading,
-    user,
-    login,
-    logout,
-    checkAuthStatus
+    navigate('/login');
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        login,
+        logout,
+        checkAuthStatus,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use the AuthContext
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

@@ -21,6 +21,12 @@ import MyInterviews from '@/Pages/Employee/Interviews/MyInterviews';
 import SubmitFeedback from '@/Pages/Employee/Interviews/SubmitFeedback';
 import AdminDashboard from '@/Pages/Admin/AdminDashboard';
 
+// Screening Pages
+import { PendingScreenings } from '@/Pages/Employee/Screening/PendingScreenings';
+import { ScreeningDetails } from '@/Pages/Employee/Screening/ScreeningDetails';
+import { ScreeningStatistics } from '@/Pages/Employee/Screening/ScreeningStatistics';
+import { MyScreenings } from '@/Pages/Employee/Screening/MyScreenings';
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -71,9 +77,14 @@ const AppRoutes: React.FC = () => {
         <Route path="applications" element={<AllApplications />} />
         <Route path="applications/:id" element={<ApplicationDetails />} />
 
+        {/* Screening (Reviewer Only) */}
+        <Route path="screening/pending" element={<PendingScreenings />} />
+        <Route path="screening/review/:applicationId" element={<ScreeningDetails />} />
+        <Route path="screening/statistics" element={<ScreeningStatistics />} />
+        <Route path="screening/my-screenings" element={<MyScreenings />} />
+
         {/* Analytics */}
         <Route path="analytics" element={<AnalyticsDashboard />} />
-
 
         {/* Interviews */}
         <Route path="interviews" element={<InterviewList />} />
@@ -82,8 +93,7 @@ const AppRoutes: React.FC = () => {
         <Route path="my-interviews" element={<MyInterviews />} />
         <Route path="interviews/:id/feedback" element={<SubmitFeedback />} />
       </Route>
-
-
+      
       <Route path="/admin" element={<AdminDashboard />} />
 
       {/* Catch-all route for 404 */}
