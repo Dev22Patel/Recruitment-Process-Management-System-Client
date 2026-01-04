@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { applicationService } from '@/Services/ApplicationService';
-import type { Application, UpdateApplicationStatusDto } from '@/types/application.types';
+import type { Application, UpdateApplicationStatusDto } from '@/Types/application.types';
 import { Button } from '@/Components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
