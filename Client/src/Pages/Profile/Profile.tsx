@@ -109,16 +109,31 @@ export const Profile = ({
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
+      
+      // Sanitize data to ensure proper integer types
+      const sanitizedData = {
+        ...formData,
+        currentSalary: formData.currentSalary ? parseInt(String(formData.currentSalary)) : 0,
+        expectedSalary: formData.expectedSalary ? parseInt(String(formData.expectedSalary)) : 0,
+        totalExperience: formData.totalExperience ? parseFloat(String(formData.totalExperience)) : 0,
+        noticePeriod: formData.noticePeriod ? parseInt(String(formData.noticePeriod)) : 0,
+        graduationYear: formData.graduationYear ? parseInt(String(formData.graduationYear)) : new Date().getFullYear()
+      };
+      
+      console.log('Sending sanitized data:', sanitizedData);
+      
       const response = await fetch(`${API_BASE_URL}/Candidate/${user.userId}/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sanitizedData),
       });
+      
       if (response.ok) {
         const updatedData = await response.json();
+        console.log('Received updated data:', updatedData);
         setCandidateData(updatedData.data || updatedData);
         setIsEditing(false);
         toast.success('Profile updated successfully!');
@@ -155,20 +170,35 @@ export const Profile = ({
 
   // Check which required fields are missing
   const getMissingFields = (): RequiredField[] => {
-    const requiredFields = [
+    const isFresher = !formData.totalExperience || formData.totalExperience === 0;
+    
+    // Fields required for ALL candidates
+    const requiredForAll = [
       { key: 'currentLocation', label: 'Current Location' },
-      { key: 'totalExperience', label: 'Total Experience' },
-      { key: 'currentCompany', label: 'Current Company' },
-      { key: 'currentSalary', label: 'Current Salary' },
       { key: 'expectedSalary', label: 'Expected Salary' },
-      { key: 'noticePeriod', label: 'Notice Period' },
       { key: 'collegeName', label: 'College Name' },
       { key: 'graduationYear', label: 'Graduation Year' },
       { key: 'degree', label: 'Degree' }
     ];
-    return requiredFields.filter(field => {
+    
+    // Fields required ONLY for experienced candidates
+    const requiredForExperienced = [
+      { key: 'totalExperience', label: 'Total Experience' },
+      { key: 'currentCompany', label: 'Current Company' },
+      { key: 'currentSalary', label: 'Current Salary' },
+      { key: 'noticePeriod', label: 'Notice Period' }
+    ];
+    
+    // Combine based on fresher status
+    const allRequired = isFresher 
+      ? requiredForAll 
+      : [...requiredForAll, ...requiredForExperienced];
+    
+    // Filter out filled fields
+    return allRequired.filter(field => {
       const value = formData[field.key as keyof UpdateCandidate];
-      return !value || (typeof value === 'string' && value.trim() === '') ||
+      return !value || 
+             (typeof value === 'string' && value.trim() === '') ||
              (typeof value === 'number' && value <= 0);
     });
   };
@@ -270,7 +300,12 @@ export const Profile = ({
         <h2 className="text-2xl font-bold">Profile Settings</h2>
         <div className="flex items-center space-x-4">
           <Button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => {
+              setIsEditing(!isEditing);
+              if (!isEditing) {
+                resetFormData(); // Reset form when entering edit mode
+              }
+            }}
             variant="outline"
             className="flex items-center"
           >
@@ -367,21 +402,94 @@ export const Profile = ({
                 </div>
               </div>
             </div>
+
             {/* Professional Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Professional Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-gray-500 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
+                Professional Information
+              </h3>
+              
+              {/* Check if fresher */}
+              {!candidateData?.totalExperience || candidateData.totalExperience === 0 ? (
+                // Fresher Display
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-500 text-white rounded-full p-2">
+                      <GraduationCap className="h-5 w-5" />
+                    </div>
                     <div>
-                      <p className="text-sm text-gray-500">Notice Period</p>
-                      <p className="font-medium">{candidateData?.noticePeriod || 0} days</p>
+                      <p className="text-blue-900 font-semibold">Fresher Candidate</p>
+                      <p className="text-sm text-blue-700">Looking for first opportunity</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="flex items-center">
+                      <DollarSign className="h-5 w-5 text-blue-600 mr-2" />
+                      <div>
+                        <p className="text-xs text-blue-600">Expected Salary</p>
+                        <p className="font-medium text-blue-900">
+                          ₹{candidateData?.expectedSalary?.toLocaleString() || 'Not specified'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                // Experienced Candidate Display
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <Clock className="h-5 w-5 text-gray-500 mr-3" />
+                        <div>
+                          <p className="text-sm text-gray-500">Total Experience</p>
+                          <p className="font-medium">{candidateData?.totalExperience} years</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Building className="h-5 w-5 text-gray-500 mr-3" />
+                        <div>
+                          <p className="text-sm text-gray-500">Current Company</p>
+                          <p className="font-medium">{candidateData?.currentCompany || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <DollarSign className="h-5 w-5 text-gray-500 mr-3" />
+                        <div>
+                          <p className="text-sm text-gray-500">Current Salary</p>
+                          <p className="font-medium">
+                            ₹{candidateData?.currentSalary?.toLocaleString() || 'Not provided'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="h-5 w-5 text-gray-500 mr-3" />
+                        <div>
+                          <p className="text-sm text-gray-500">Notice Period</p>
+                          <p className="font-medium">{candidateData?.noticePeriod || 0} days</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Expected Salary - Always shown for experienced */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center">
+                      <DollarSign className="h-5 w-5 text-green-600 mr-3" />
+                      <div>
+                        <p className="text-sm text-gray-500">Expected Salary</p>
+                        <p className="font-medium text-lg text-green-600">
+                          ₹{candidateData?.expectedSalary?.toLocaleString() || 'Not provided'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
+
             {/* Education Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Education Information</h3>
@@ -409,6 +517,7 @@ export const Profile = ({
                 </div>
               </div>
             </div>
+
             {/* Skills by Category */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Skills</h3>
@@ -453,6 +562,7 @@ export const Profile = ({
                 );
               })()}
             </div>
+
             {/* Resume Display */}
             {candidateData?.resumeFilePath && (
               <div className="mt-8">

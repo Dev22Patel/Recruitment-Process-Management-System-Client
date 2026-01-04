@@ -3,7 +3,7 @@ import { Button } from '@/Components/ui/Button';
 import { Plus, X, MapPin, Clock, Building, DollarSign, Calendar, GraduationCap } from 'lucide-react';
 import type { UpdateCandidate, Skill } from './ProfileTypes';
 import { ResumeUpload } from './ResumeUpload';
-import { useState, type JSXElementConstructor, type Key, type ReactElement, type ReactNode, type ReactPortal } from 'react';
+import { useState, useEffect } from 'react';
 
 interface PersonalInfoSectionProps {
   formData: UpdateCandidate;
@@ -18,7 +18,7 @@ export const PersonalInfoSection = ({ formData, setFormData, isRequired = false 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           <MapPin className="inline h-4 w-4 mr-1" />
-          Current Location {isRequired && '*'}
+          Current Location {isRequired && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
@@ -27,22 +27,6 @@ export const PersonalInfoSection = ({ formData, setFormData, isRequired = false 
           onChange={(e) => setFormData(prev => ({ ...prev, currentLocation: e.target.value }))}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="e.g., Mumbai, Maharashtra"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Clock className="inline h-4 w-4 mr-1" />
-          Total Experience (Years) {isRequired && '*'}
-        </label>
-        <input
-          type="number"
-          required={isRequired}
-          min="0"
-          max="50"
-          step="0.1"
-          value={formData.totalExperience || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, totalExperience: parseFloat(e.target.value) }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
     </div>
@@ -55,69 +39,207 @@ interface ProfessionalInfoSectionProps {
   isRequired?: boolean;
 }
 
-export const ProfessionalInfoSection = ({ formData, setFormData, isRequired = false }: ProfessionalInfoSectionProps) => (
-  <div>
-    <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Professional Information</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Building className="inline h-4 w-4 mr-1" />
-          Current Company {isRequired && '*'}
+export const ProfessionalInfoSection = ({ 
+  formData, 
+  setFormData, 
+  isRequired = false 
+}: ProfessionalInfoSectionProps) => {
+  // Determine if user is a fresher based on experience
+  const [isFresher, setIsFresher] = useState(
+    formData.totalExperience === 0 || formData.totalExperience === null || formData.totalExperience === undefined
+  );
+
+  // Sync isFresher state when formData changes
+  useEffect(() => {
+    if (formData.totalExperience === 0) {
+      setIsFresher(true);
+    } else if (formData.totalExperience && formData.totalExperience > 0) {
+      setIsFresher(false);
+    }
+  }, [formData.totalExperience]);
+
+  const handleFresherToggle = (checked: boolean) => {
+    setIsFresher(checked);
+    if (checked) {
+      // Set all experience fields to 0 or empty for freshers
+      setFormData(prev => ({
+        ...prev,
+        totalExperience: 0,
+        currentCompany: '',
+        currentSalary: 0,
+        noticePeriod: 0
+      }));
+    } else {
+      // Clear totalExperience to allow user input
+      setFormData(prev => ({
+        ...prev,
+        totalExperience: undefined
+      }));
+    }
+  };
+
+  const handleExperienceChange = (value: string) => {
+    if (value === '' || value === null) {
+      setFormData(prev => ({ ...prev, totalExperience: undefined }));
+      return;
+    }
+    
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      setFormData(prev => ({ ...prev, totalExperience: numValue }));
+      // Auto-detect fresher status
+      if (numValue === 0) {
+        setIsFresher(true);
+        setFormData(prev => ({
+          ...prev,
+          currentCompany: '',
+          currentSalary: 0,
+          noticePeriod: 0
+        }));
+      } else {
+        setIsFresher(false);
+      }
+    }
+  };
+
+  return (
+    <div>
+      <h3 className="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">
+        Professional Information
+      </h3>
+      
+      {/* Fresher Checkbox */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isFresher}
+            onChange={(e) => handleFresherToggle(e.target.checked)}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-blue-900">
+            I am a fresher (No work experience)
+          </span>
         </label>
-        <input
-          type="text"
-          required={isRequired}
-          value={formData.currentCompany || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, currentCompany: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        {isFresher && (
+          <p className="text-xs text-blue-700 mt-1 ml-6">
+            ✓ Work experience fields are set to N/A for freshers
+          </p>
+        )}
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <DollarSign className="inline h-4 w-4 mr-1" />
-          Current Salary (₹) {isRequired && '*'}
-        </label>
-        <input
-          type="number"
-          required={isRequired}
-          min="0"
-          value={formData.currentSalary || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, currentSalary: parseFloat(e.target.value) }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <DollarSign className="inline h-4 w-4 mr-1" />
-          Expected Salary (₹) {isRequired && '*'}
-        </label>
-        <input
-          type="number"
-          required={isRequired}
-          min="0"
-          value={formData.expectedSalary || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, expectedSalary: parseFloat(e.target.value) }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Calendar className="inline h-4 w-4 mr-1" />
-          Notice Period (Days) {isRequired && '*'}
-        </label>
-        <input
-          type="number"
-          required={isRequired}
-          min="0"
-          max="365"
-          value={formData.noticePeriod || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, noticePeriod: parseInt(e.target.value) }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Total Experience */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Clock className="inline h-4 w-4 mr-1" />
+            Total Experience (Years) {!isFresher && isRequired && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="number"
+            required={!isFresher && isRequired}
+            min="0"
+            max="50"
+            step="0.1"
+            value={isFresher ? 0 : (formData.totalExperience ?? '')}
+            onChange={(e) => handleExperienceChange(e.target.value)}
+            disabled={isFresher}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isFresher ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+            }`}
+            placeholder={isFresher ? '0 (Fresher)' : 'e.g., 2.5'}
+          />
+        </div>
+
+        {/* Current Company */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Building className="inline h-4 w-4 mr-1" />
+            Current Company {!isFresher && isRequired && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="text"
+            required={!isFresher && isRequired}
+            value={isFresher ? '' : (formData.currentCompany || '')}
+            onChange={(e) => setFormData(prev => ({ ...prev, currentCompany: e.target.value }))}
+            disabled={isFresher}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isFresher ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+            }`}
+            placeholder={isFresher ? 'N/A (Fresher)' : 'e.g., TCS'}
+          />
+        </div>
+
+        {/* Current Salary */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <DollarSign className="inline h-4 w-4 mr-1" />
+            Current Salary (₹) {!isFresher && isRequired && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="number"
+            required={!isFresher && isRequired}
+            min="0"
+            value={isFresher ? 0 : (formData.currentSalary ?? '')}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              currentSalary: e.target.value ? parseFloat(e.target.value) : undefined
+            }))}
+            disabled={isFresher}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isFresher ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+            }`}
+            placeholder={isFresher ? 'N/A (Fresher)' : 'e.g., 500000'}
+          />
+        </div>
+
+        {/* Expected Salary - Always Required */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <DollarSign className="inline h-4 w-4 mr-1" />
+            Expected Salary (₹) {isRequired && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="number"
+            required={isRequired}
+            min="0"
+            value={formData.expectedSalary ?? ''}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              expectedSalary: e.target.value ? parseFloat(e.target.value) : undefined
+            }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., 300000"
+          />
+        </div>
+
+        {/* Notice Period */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Calendar className="inline h-4 w-4 mr-1" />
+            Notice Period (Days) {!isFresher && isRequired && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            type="number"
+            required={!isFresher && isRequired}
+            min="0"
+            max="365"
+            value={isFresher ? 0 : (formData.noticePeriod ?? '')}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              noticePeriod: e.target.value ? parseInt(e.target.value) : undefined
+            }))}
+            disabled={isFresher}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isFresher ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+            }`}
+            placeholder={isFresher ? 'N/A (Fresher)' : 'e.g., 30'}
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface EducationInfoSectionProps {
   formData: UpdateCandidate;
@@ -132,7 +254,7 @@ export const EducationInfoSection = ({ formData, setFormData, isRequired = false
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           <GraduationCap className="inline h-4 w-4 mr-1" />
-          College Name {isRequired && '*'}
+          College Name {isRequired && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
@@ -144,7 +266,7 @@ export const EducationInfoSection = ({ formData, setFormData, isRequired = false
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Degree {isRequired && '*'}
+          Degree {isRequired && <span className="text-red-500">*</span>}
         </label>
         <input
           type="text"
@@ -157,13 +279,13 @@ export const EducationInfoSection = ({ formData, setFormData, isRequired = false
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Graduation Year {isRequired && '*'}
+          Graduation Year {isRequired && <span className="text-red-500">*</span>}
         </label>
         <input
           type="number"
           required={isRequired}
           min="1900"
-          max="2027"
+          max="2030"
           value={formData.graduationYear || ''}
           onChange={(e) => setFormData(prev => ({ ...prev, graduationYear: parseInt(e.target.value) }))}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -369,7 +491,7 @@ export const SkillsSection = ({
                     min="0"
                     max="50"
                     step="0.1"
-                    value={skill.yearsOfExperience || ''}
+                    value={skill.yearsOfExperience ?? ''}
                     onChange={(e) => {
                       const value = e.target.value;
                       const updatedSkills = formData.skills?.map((s, i) =>
@@ -405,28 +527,46 @@ export const SkillsSection = ({
   );
 };
 
-
-export const MissingFieldsAlert = ({ missingFields, candidateData }: any) => (
-  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-    <p className="text-yellow-800 text-sm">
-      <strong>Profile Incomplete:</strong> Please fill in all required fields to access all dashboard features.
-      {candidateData && (
-        <span className="block mt-1">
-          Some information is already saved. Please complete the remaining fields.
-        </span>
-      )}
-    </p>
-    {missingFields.length > 0 && (
-      <div className="mt-3">
-        <p className="text-yellow-800 text-sm font-medium mb-2">Missing required fields:</p>
-        <div className="flex flex-wrap gap-2">
-          {missingFields.map((field: { key: Key | null | undefined; label: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
-            <span key={field.key} className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs">
-              {field.label}
-            </span>
-          ))}
+export const MissingFieldsAlert = ({ missingFields, candidateData }: any) => {
+  const isFresher = candidateData?.totalExperience === 0;
+  
+  return (
+    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+      <p className="text-yellow-800 text-sm">
+        <strong>Profile Incomplete:</strong> Please fill in all required fields to access all dashboard features.
+      </p>
+      
+      {isFresher && (
+        <div className="mt-2 bg-blue-50 border border-blue-200 rounded p-2">
+          <p className="text-blue-800 text-xs">
+            ✓ Detected as <strong>Fresher</strong> - Work experience fields are optional
+          </p>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+      
+      {candidateData && (
+        <p className="text-yellow-700 text-xs mt-2">
+          Some information is already saved. Please complete the remaining fields.
+        </p>
+      )}
+      
+      {missingFields.length > 0 && (
+        <div className="mt-3">
+          <p className="text-yellow-800 text-sm font-medium mb-2">
+            Missing required fields:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {missingFields.map((field: any) => (
+              <span 
+                key={field.key} 
+                className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs"
+              >
+                {field.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

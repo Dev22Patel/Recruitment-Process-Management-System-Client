@@ -382,9 +382,6 @@ export const Jobs = ({ isProfileComplete }: JobsProps) => {
                             <p className="text-sm text-red-700 mb-2">{eligibility.message}</p>
                             )}
                             <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div><span className="font-medium">Skill Match:</span> {eligibility.skillMatchPercentage}%</div>
-                            <div><span className="font-medium">Required:</span> {eligibility.matchedRequiredSkills}/{eligibility.totalRequiredSkills}</div>
-                            <div><span className="font-medium">Preferred:</span> {eligibility.matchedPreferredSkills}/{eligibility.totalPreferredSkills}</div>
                             </div>
                         </div>
                         </div>
