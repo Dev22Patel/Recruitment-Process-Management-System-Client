@@ -26,6 +26,7 @@ import { PendingScreenings } from '@/Pages/Employee/Screening/PendingScreenings'
 import { ScreeningDetails } from '@/Pages/Employee/Screening/ScreeningDetails';
 import { ScreeningStatistics } from '@/Pages/Employee/Screening/ScreeningStatistics';
 import { MyScreenings } from '@/Pages/Employee/Screening/MyScreenings';
+import BulkUpload from '@/Pages/Employee/Bulk-upload/Bulkupload';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -56,9 +57,9 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Employee Routes */}
+      {/* Employee Routes - All nested under EmployeeDashboard */}
       <Route
-        path="/employee/*"
+        path="/employee"
         element={
           <ProtectedRoute>
             <EmployeeDashboard />
@@ -92,8 +93,11 @@ const AppRoutes: React.FC = () => {
         <Route path="interviews/:id" element={<InterviewDetails />} />
         <Route path="my-interviews" element={<MyInterviews />} />
         <Route path="interviews/:id/feedback" element={<SubmitFeedback />} />
+
+        {/* Bulk Upload (HR/Admin) - Now properly nested */}
+        <Route path="bulk-upload" element={<BulkUpload />} />
       </Route>
-      
+
       <Route path="/admin" element={<AdminDashboard />} />
 
       {/* Catch-all route for 404 */}
