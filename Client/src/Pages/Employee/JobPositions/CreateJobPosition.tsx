@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jobPositionService } from '@/Services/JobPositionService';
+import { skillService, type Skill } from '@/Services/SkillService';
 import type { CreateJobPositionDto } from '@/Types/job.types';
 import { Button } from '@/Components/ui/Button';
 import { Input } from '@/Components/ui/input';
@@ -9,11 +10,19 @@ import { Label } from '@/Components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, X, AlertCircle } from 'lucide-react';
+
+interface SkillRequirement {
+  skillId: number;
+  skillName: string;
+  minYearsExperience: number;
+}
 
 const CreateJobPosition = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingSkills, setLoadingSkills] = useState(true);
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
   const [formData, setFormData] = useState<CreateJobPositionDto>({
     title: '',
     description: '',
@@ -29,12 +38,57 @@ const CreateJobPosition = () => {
     preferredSkills: [],
   });
 
+  const [requiredSkills, setRequiredSkills] = useState<SkillRequirement[]>([]);
+  const [preferredSkills, setPreferredSkills] = useState<SkillRequirement[]>([]);
+  
+  // Add skill form states
+  const [showRequiredSkillForm, setShowRequiredSkillForm] = useState(false);
+  const [showPreferredSkillForm, setShowPreferredSkillForm] = useState(false);
+  const [selectedRequiredSkill, setSelectedRequiredSkill] = useState('');
+  const [requiredSkillExperience, setRequiredSkillExperience] = useState('');
+  const [selectedPreferredSkill, setSelectedPreferredSkill] = useState('');
+  const [preferredSkillExperience, setPreferredSkillExperience] = useState('');
+
+  useEffect(() => {
+    fetchSkills();
+  }, []);
+
+  const fetchSkills = async () => {
+    try {
+      setLoadingSkills(true);
+      const skills = await skillService.getAllSkills();
+      setAvailableSkills(skills.filter(skill => skill.isActive));
+    } catch (error) {
+      toast.error('Failed to fetch skills');
+    } finally {
+      setLoadingSkills(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (requiredSkills.length === 0) {
+      toast.error('Please add at least one required skill');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await jobPositionService.createJobPosition(formData);
+      const submitData: CreateJobPositionDto = {
+        ...formData,
+        requiredSkills: requiredSkills.map(({ skillId, minYearsExperience }) => ({
+          skillId,
+          minYearsExperience,
+        })),
+        preferredSkills: preferredSkills.map(({ skillId, minYearsExperience }) => ({
+          skillId,
+          minYearsExperience,
+        })),
+      };
+
+      await jobPositionService.createJobPosition(submitData);
       toast.success('Job position created successfully');
       navigate('/employee/jobs');
     } catch (error: any) {
@@ -46,6 +100,70 @@ const CreateJobPosition = () => {
 
   const handleChange = (field: keyof CreateJobPositionDto, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddRequiredSkill = () => {
+    if (!selectedRequiredSkill || !requiredSkillExperience || parseFloat(requiredSkillExperience) < 0) {
+      toast.error('Please select a skill and enter valid experience');
+      return;
+    }
+
+    const skill = availableSkills.find(s => s.id === parseInt(selectedRequiredSkill));
+    if (!skill) return;
+
+    const newSkill: SkillRequirement = {
+      skillId: skill.id,
+      skillName: skill.skillName,
+      minYearsExperience: parseFloat(requiredSkillExperience),
+    };
+
+    setRequiredSkills(prev => [...prev, newSkill]);
+    setShowRequiredSkillForm(false);
+    setSelectedRequiredSkill('');
+    setRequiredSkillExperience('');
+    toast.success(`Added ${skill.skillName} to required skills`);
+  };
+
+  const handleAddPreferredSkill = () => {
+    if (!selectedPreferredSkill || !preferredSkillExperience || parseFloat(preferredSkillExperience) < 0) {
+      toast.error('Please select a skill and enter valid experience');
+      return;
+    }
+
+    const skill = availableSkills.find(s => s.id === parseInt(selectedPreferredSkill));
+    if (!skill) return;
+
+    const newSkill: SkillRequirement = {
+      skillId: skill.id,
+      skillName: skill.skillName,
+      minYearsExperience: parseFloat(preferredSkillExperience),
+    };
+
+    setPreferredSkills(prev => [...prev, newSkill]);
+    setShowPreferredSkillForm(false);
+    setSelectedPreferredSkill('');
+    setPreferredSkillExperience('');
+    toast.success(`Added ${skill.skillName} to preferred skills`);
+  };
+
+  const removeRequiredSkill = (skillId: number) => {
+    setRequiredSkills(prev => prev.filter(s => s.skillId !== skillId));
+  };
+
+  const removePreferredSkill = (skillId: number) => {
+    setPreferredSkills(prev => prev.filter(s => s.skillId !== skillId));
+  };
+
+  const getAvailableRequiredSkills = () => {
+    return availableSkills.filter(skill => 
+      !requiredSkills.some(rs => rs.skillId === skill.id)
+    );
+  };
+
+  const getAvailablePreferredSkills = () => {
+    return availableSkills.filter(skill => 
+      !preferredSkills.some(ps => ps.skillId === skill.id)
+    );
   };
 
   return (
@@ -66,7 +184,6 @@ const CreateJobPosition = () => {
             <CardTitle>Job Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Job Title *</Label>
@@ -178,7 +295,6 @@ const CreateJobPosition = () => {
               </div>
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Job Description *</Label>
               <Textarea
@@ -186,12 +302,11 @@ const CreateJobPosition = () => {
                 required
                 rows={6}
                 value={formData.description}
-                onChange={(e : any) => handleChange('description', e.target.value)}
+                onChange={(e: any) => handleChange('description', e.target.value)}
                 placeholder="Provide a detailed description of the role, responsibilities, and requirements..."
               />
             </div>
 
-            {/* Status Reason */}
             <div className="space-y-2">
               <Label htmlFor="statusReason">Status Reason</Label>
               <Input
@@ -201,23 +316,275 @@ const CreateJobPosition = () => {
                 placeholder="Optional: Reason for current status"
               />
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? 'Creating...' : 'Create Job Position'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/employee/jobs')}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Required Skills Section */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Required Skills *</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">At least one required skill must be added</p>
+              </div>
+              {!showRequiredSkillForm && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRequiredSkillForm(true)}
+                  disabled={loadingSkills}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Skill
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loadingSkills ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Loading skills...</p>
+              </div>
+            ) : (
+              <>
+                {/* Add Skill Form */}
+                {showRequiredSkillForm && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <h4 className="font-medium text-gray-900 mb-3">Add Required Skill</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Skill</label>
+                        <select
+                          value={selectedRequiredSkill}
+                          onChange={(e) => setSelectedRequiredSkill(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          style={{ color: '#111827', backgroundColor: '#ffffff' }}
+                        >
+                          <option value="" style={{ color: '#111827', backgroundColor: '#ffffff' }}>Choose skill...</option>
+                          {getAvailableRequiredSkills().map(skill => (
+                            <option key={skill.id} value={skill.id} style={{ color: '#111827', backgroundColor: '#ffffff' }}>
+                              {skill.skillName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Min. Experience (Years)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="30"
+                          step="0.1"
+                          value={requiredSkillExperience}
+                          onChange={(e) => setRequiredSkillExperience(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 2.5"
+                        />
+                      </div>
+                      <div className="flex items-end space-x-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddRequiredSkill}
+                          disabled={!selectedRequiredSkill || !requiredSkillExperience}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShowRequiredSkillForm(false);
+                            setSelectedRequiredSkill('');
+                            setRequiredSkillExperience('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills List */}
+                <div className="space-y-3">
+                  {requiredSkills.map((skill) => (
+                    <div key={skill.skillId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900">{skill.skillName}</span>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {skill.minYearsExperience} years minimum experience
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeRequiredSkill(skill.skillId)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {requiredSkills.length === 0 && (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-2" />
+                      <p className="text-gray-600 font-medium">No required skills added</p>
+                      <p className="text-gray-500 text-sm mt-1">Click "Add Skill" to add at least one required skill</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Preferred Skills Section */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Preferred Skills</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">Optional: Add skills that are nice to have</p>
+              </div>
+              {!showPreferredSkillForm && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPreferredSkillForm(true)}
+                  disabled={loadingSkills}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Skill
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loadingSkills ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Loading skills...</p>
+              </div>
+            ) : (
+              <>
+                {/* Add Skill Form */}
+                {showPreferredSkillForm && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <h4 className="font-medium text-gray-900 mb-3">Add Preferred Skill</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Skill</label>
+                        <select
+                          value={selectedPreferredSkill}
+                          onChange={(e) => setSelectedPreferredSkill(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          style={{ color: '#111827', backgroundColor: '#ffffff' }}
+                        >
+                          <option value="" style={{ color: '#111827', backgroundColor: '#ffffff' }}>Choose skill...</option>
+                          {getAvailablePreferredSkills().map(skill => (
+                            <option key={skill.id} value={skill.id} style={{ color: '#111827', backgroundColor: '#ffffff' }}>
+                              {skill.skillName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Min. Experience (Years)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="30"
+                          step="0.1"
+                          value={preferredSkillExperience}
+                          onChange={(e) => setPreferredSkillExperience(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 2.5"
+                        />
+                      </div>
+                      <div className="flex items-end space-x-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddPreferredSkill}
+                          disabled={!selectedPreferredSkill || !preferredSkillExperience}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShowPreferredSkillForm(false);
+                            setSelectedPreferredSkill('');
+                            setPreferredSkillExperience('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills List */}
+                <div className="space-y-3">
+                  {preferredSkills.map((skill) => (
+                    <div key={skill.skillId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900">{skill.skillName}</span>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {skill.minYearsExperience} years minimum experience
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removePreferredSkill(skill.skillId)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {preferredSkills.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No preferred skills added. These are optional.
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="flex gap-4 pt-6">
+          <Button type="submit" disabled={loading} className="flex-1">
+            {loading ? 'Creating...' : 'Create Job Position'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/employee/jobs')}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+        </div>
       </form>
     </div>
   );

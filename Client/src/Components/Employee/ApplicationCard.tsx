@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/badge';
-import type { Application } from '@/types/application.types';
+import type { Application } from '@/Types/application.types';
 import ApplicationStatusBadge from './ApplicationStatusBadge';
 import { Calendar, MapPin, Briefcase, Mail, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ interface ApplicationCardProps {
 
 const ApplicationCard = ({ application }: ApplicationCardProps) => {
   const navigate = useNavigate();
-
+console.log(application);
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader>
@@ -49,30 +49,7 @@ const ApplicationCard = ({ application }: ApplicationCardProps) => {
             <span>{application.totalExperience || 0} years exp</span>
           </div>
         </div>
-
-        <div className="space-y-2">
-          <div className="text-sm">
-            <span className="font-medium">Skill Match: </span>
-            <Badge variant="outline">
-              {application.matchingSkillsCount}/{application.requiredSkills.length}
-            </Badge>
-          </div>
-          {application.candidateSkills.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {application.candidateSkills.slice(0, 5).map((skill, idx) => (
-                <Badge key={idx} variant="secondary" className="text-xs">
-                  {skill}
-                </Badge>
-              ))}
-              {application.candidateSkills.length > 5 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{application.candidateSkills.length - 5} more
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-
+        
         <Button
           className="w-full mt-2"
           onClick={() => navigate(`/employee/applications/${application.id}`)}
