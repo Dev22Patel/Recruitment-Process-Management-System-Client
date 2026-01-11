@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/badge';
 import type { Application } from '@/Types/application.types';
 import ApplicationStatusBadge from './ApplicationStatusBadge';
 import { Calendar, MapPin, Briefcase, Mail, FileText } from 'lucide-react';

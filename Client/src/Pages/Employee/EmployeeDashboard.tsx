@@ -13,6 +13,9 @@ import {
   ChevronRight,
   ClipboardCheck,
   Upload,
+  CheckSquare,
+  Gift,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/Components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -23,6 +26,7 @@ const EmployeeDashboard = () => {
   const [interviewsExpanded, setInterviewsExpanded] = useState(true);
   const [screeningExpanded, setScreeningExpanded] = useState(true);
   const [bulkUploadExpanded, setBulkUploadExpanded] = useState(true);
+  const [hrExpanded, setHrExpanded] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -93,6 +97,24 @@ const EmployeeDashboard = () => {
     }
   ];
 
+  const hrManagementItems = [
+    {
+      title: 'Document Verification',
+      icon: CheckSquare,
+      path: '/employee/documents/verification',
+    },
+    {
+      title: 'Offer Management',
+      icon: Gift,
+      path: '/employee/offers',
+    },
+    {
+      title: 'Employees',
+      icon: Users,
+      path: '/employee/employees',
+    },
+  ];
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -105,6 +127,11 @@ const EmployeeDashboard = () => {
   const isScreeningActive = location.pathname.startsWith('/employee/screening');
   
   const isBulkUploadActive = location.pathname.startsWith('/employee/bulk-upload');
+
+  const isHrManagementActive =
+    location.pathname.startsWith('/employee/documents') ||
+    location.pathname.startsWith('/employee/offers') ||
+    location.pathname.startsWith('/employee/employees');
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -153,6 +180,66 @@ const EmployeeDashboard = () => {
               </button>
             );
           })}
+
+          {/* HR Management Section (HR Only) */}
+          {isHR && (
+            <div className="space-y-1">
+              <button
+                onClick={() => {
+                  if (!sidebarOpen) {
+                    setSidebarOpen(true);
+                  }
+                  setHrExpanded(!hrExpanded);
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                  isHrManagementActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                )}
+              >
+                <Users className="h-5 w-5 flex-shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium flex-1 text-left">HR Management</span>
+                    {hrExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </>
+                )}
+              </button>
+
+              {/* HR Management Sub-menu */}
+              {sidebarOpen && hrExpanded && (
+                <div className="ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                  {hrManagementItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive =
+                      location.pathname === item.path ||
+                      location.pathname.startsWith(item.path + '/');
+
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => navigate(item.path)}
+                        className={cn(
+                          'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2',
+                          isActive
+                            ? 'bg-blue-50 text-blue-600 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Bulk Upload Section (HR Only) */}
           {isHR && (

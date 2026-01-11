@@ -26,7 +26,16 @@ import { PendingScreenings } from '@/Pages/Employee/Screening/PendingScreenings'
 import { ScreeningDetails } from '@/Pages/Employee/Screening/ScreeningDetails';
 import { ScreeningStatistics } from '@/Pages/Employee/Screening/ScreeningStatistics';
 import { MyScreenings } from '@/Pages/Employee/Screening/MyScreenings';
-import BulkUpload from '@/Pages/Employee/Bulk-upload/Bulkupload';
+import BulkUpload from '@/Pages/Employee/Bulk-upload/BulkUpload';
+
+// HR Management Pages
+import DocumentVerification from '@/Pages/Employee/Documents/DocumentVerification';
+import OfferList from '@/Pages/Employee/Offers/OfferList';
+import CreateOffer from '@/Pages/Employee/Offers/CreateOffer';
+import OfferDetails from '@/Pages/Employee/Offers/OfferDetails';
+import EmployeeList from '@/Pages/Employee/Employees/EmployeeList';
+import OnboardEmployee from '@/Pages/Employee/Employees/OnBoardEmployee';
+import CandidateOffers from '@/Pages/CandidateOffers';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -56,6 +65,14 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+      path="/my-offers"
+      element={
+        <ProtectedRoute>
+          <CandidateOffers isProfileComplete={true} />
+        </ProtectedRoute>
+      }
+    />
 
       {/* Employee Routes - All nested under EmployeeDashboard */}
       <Route
@@ -94,8 +111,21 @@ const AppRoutes: React.FC = () => {
         <Route path="my-interviews" element={<MyInterviews />} />
         <Route path="interviews/:id/feedback" element={<SubmitFeedback />} />
 
-        {/* Bulk Upload (HR/Admin) - Now properly nested */}
+        {/* Bulk Upload (HR/Admin) */}
         <Route path="bulk-upload" element={<BulkUpload />} />
+
+        {/* HR Management - Document Verification */}
+        <Route path="documents/verification" element={<DocumentVerification />} />
+
+        {/* HR Management - Offers */}
+        <Route path="offers" element={<OfferList />} />
+        <Route path="offers/create/:applicationId" element={<CreateOffer />} />
+        <Route path="offers/:id" element={<OfferDetails />} />
+
+        {/* HR Management - Employees */}
+        <Route path="employees" element={<EmployeeList />} />
+        <Route path="employees/onboard" element={<OnboardEmployee />} />
+
       </Route>
 
       <Route path="/admin" element={<AdminDashboard />} />

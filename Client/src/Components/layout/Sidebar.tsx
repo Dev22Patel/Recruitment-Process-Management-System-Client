@@ -1,7 +1,5 @@
-import { Avatar, AvatarFallback } from '@/Components/ui/avatar';
-import { Button } from '@/Components/ui/Button';
-import { Home, Briefcase, User, Clock, FileText, LogOut } from 'lucide-react';
-import { useAuth } from '../../Context/AuthContext';
+// src/Components/layout/Sidebar.tsx
+import { LayoutDashboard, Briefcase, FileText, Calendar, User, LogOut, FileCheck } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -11,92 +9,82 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeTab, setActiveTab, isProfileComplete, onLogout }: SidebarProps) => {
-  const { user } = useAuth();
-
-  const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'jobs', label: 'Browse Jobs', icon: Briefcase },
-    { id: 'applications', label: 'My Applications', icon: FileText },
-    { id: 'interviews', label: 'Interviews', icon: Clock },
-    { id: 'profile', label: 'Profile', icon: User },
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, disabled: false },
+    { id: 'jobs', label: 'Jobs', icon: Briefcase, disabled: !isProfileComplete },
+    { id: 'applications', label: 'Applications', icon: FileText, disabled: !isProfileComplete },
+    { id: 'interviews', label: 'Interviews', icon: Calendar, disabled: !isProfileComplete },
+    { id: 'documents', label: 'Documents', icon: FileCheck, disabled: !isProfileComplete },
+    { id: 'profile', label: 'Profile', icon: User, disabled: false },
+    {
+  id: 'offers',
+  label: 'Offers',
+  disabled: !isProfileComplete,
+  icon: Briefcase,},
   ];
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200">
       <div className="flex flex-col h-full">
-        {/* Logo */}
-        <div className="flex items-center px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">JB</span>
-            </div>
-            <span className="font-semibold text-gray-900">JobBoard</span>
-          </div>
-        </div>
-
-        {/* User Profile */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-gray-100 text-gray-600">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-            </div>
-          </div>
+        {/* Logo/Brand */}
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-2xl font-bold">Candidate Portal</h1>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-4 space-y-1">
-          {sidebarItems.map((item) => {
+        <nav className="flex-1 p-4 space-y-1">
+          {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === item.id
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                onClick={() => !item.disabled && setActiveTab(item.id)}
+                disabled={item.disabled}
+                className={`
+                  w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
+                  ${isActive 
+                    ? 'bg-black text-white' 
+                    : item.disabled 
+                      ? 'text-gray-400 cursor-not-allowed' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }
+                `}
               >
-                <Icon className="mr-3 h-5 w-5" />
-                {item.label}
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium">{item.label}</span>
+                {item.disabled && (
+                  <span className="ml-auto text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
+                    Locked
+                  </span>
+                )}
               </button>
             );
           })}
         </nav>
 
-        {/* Profile Status */}
-        <div className="px-4 py-2">
-          <div
-            className={`text-xs px-2 py-1 rounded-full text-center ${
-              isProfileComplete
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            Profile: {isProfileComplete ? 'Complete ✓' : 'Incomplete'}
+        {/* Profile Completion Status */}
+        {!isProfileComplete && (
+          <div className="p-4 m-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 font-medium mb-1">⚠️ Profile Incomplete</p>
+            <p className="text-xs text-yellow-700">
+              Complete your profile to unlock all features
+            </p>
           </div>
-        </div>
+        )}
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-200">
-          <Button
-            variant="ghost"
+          <button
             onClick={onLogout}
-            className="w-full justify-start text-gray-600 hover:text-gray-900"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
           >
-            <LogOut className="mr-3 h-4 w-4" />
-            Logout
-          </Button>
+            <LogOut className="h-5 w-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </div>
-    </div>
+    </aside>
   );
 };

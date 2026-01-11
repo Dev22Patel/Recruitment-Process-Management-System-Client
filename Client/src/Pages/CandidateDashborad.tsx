@@ -1,4 +1,3 @@
-// Updated src/Pages/CandidateDashboard.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +8,9 @@ import { Dashboard } from './Dashboard';
 import { Jobs } from './Jobs';
 import { Applications } from './Application/Applications';
 import { Interviews } from './Interviews';
+import { Documents } from './Documents';
 import { Profile } from './Profile/Profile';
+import CandidateOffers from './CandidateOffers';
 
 const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -95,9 +96,11 @@ const CandidateDashboard = () => {
       case 'jobs':
         return <Jobs isProfileComplete={!!isProfileComplete} />;
       case 'applications':
-        return <Applications isProfileComplete={!!isProfileComplete} />;
+        return <Applications />;
       case 'interviews':
         return <Interviews isProfileComplete={!!isProfileComplete} />;
+      case 'documents':
+        return <Documents isProfileComplete={!!isProfileComplete} />;
       case 'profile':
         return (
           <Profile
@@ -107,6 +110,8 @@ const CandidateDashboard = () => {
             checkProfileCompletion={checkProfileCompletion}
           />
         );
+        case 'offers':
+        return <CandidateOffers isProfileComplete={!!isProfileComplete} />;
       default:
         return <Dashboard isProfileComplete={!!isProfileComplete} setActiveTab={setActiveTab} />;
     }
@@ -114,7 +119,6 @@ const CandidateDashboard = () => {
 
   return (
     <div className="min-h-screen bg-white">
-
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}

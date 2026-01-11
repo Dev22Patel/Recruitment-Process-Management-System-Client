@@ -36,7 +36,7 @@ interface BulkUploadHistoryProps {
 const BulkUploadHistory: React.FC<BulkUploadHistoryProps> = ({ onViewStatus }) => {
   const [uploads, setUploads] = useState<BulkUploadStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pageNumber] = useState(1);
   const [pageSize] = useState(10);
 
   const API_BASE_URL = 'https://localhost:7057/api';
